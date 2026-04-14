@@ -26,8 +26,9 @@ jobs:
         run: |
           find . -name "*.php" -exec php -l {} \;
 
-      - name: Install PHPCS & WPCS (Compatible Versions)
+      - name: Install PHPCS & WPCS (Fixed)
         run: |
+          composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           composer global require "squizlabs/php_codesniffer:^3.7"
           composer global require "wp-coding-standards/wpcs:^3.0"
 
