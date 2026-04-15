@@ -1,0 +1,6 @@
+.env
+node_modules
+vendor
+*.log
+mysql_data
+.DS_Store

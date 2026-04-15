@@ -1,4 +1,4 @@
-name: WordPress CI/CD
+name: Multi-Tenant CI/CD
 
 on:
   pull_request:
@@ -8,72 +8,128 @@ on:
 jobs:
 
   # -------------------------
-  # QUALITY CHECK (PR)
+  # PR VALIDATION
   # -------------------------
   quality-check:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
-        with:
-          php-version: 8.2
+      - uses: actions/checkout@v4
 
       - name: PHP Lint
-        run: |
-          find . -name "*.php" -exec php -l {} \;
+        run: find . -name "*.php" -exec php -l {} \;
 
-      - name: Install PHPCS & WPCS
+      - name: Install PHPCS
         run: |
           composer global config allow-plugins.dealerdirect/phpcodesniffer-composer-installer true
           composer global require "squizlabs/php_codesniffer:^3.7"
           composer global require "wp-coding-standards/wpcs:^3.0"
 
-      - name: Run WordPress Coding Standards
-        run: |
-          ~/.composer/vendor/bin/phpcs --standard=WordPress .
-
-      - name: Install Trivy
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install -y trivy
-
-      - name: Run Security Scan
-        run: |
-          trivy fs . --severity HIGH,CRITICAL --exit-code 0
+      - name: Run Coding Standards
+        run: ~/.composer/vendor/bin/phpcs --standard=WordPress .
 
   # -------------------------
-  # BUILD & DEPLOY (MAIN)
+  # DETECT CHANGES
   # -------------------------
-  build-deploy:
+  detect-changes:
     runs-on: ubuntu-latest
     needs: quality-check
-    if: github.ref == 'refs/heads/main'
+    outputs:
+      tenant1: ${{ steps.filter.outputs.tenant1 }}
+      tenant2: ${{ steps.filter.outputs.tenant2 }}
+      tenant3: ${{ steps.filter.outputs.tenant3 }}
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            tenant1:
+              - 'wp-content/themes/tenant1-theme/**'
+              - 'wp-content/plugins/tenant1-plugin/**'
+            tenant2:
+              - 'wp-content/themes/tenant2-theme/**'
+              - 'wp-content/plugins/tenant2-plugin/**'
+            tenant3:
+              - 'wp-content/themes/tenant3-theme/**'
+              - 'wp-content/plugins/tenant3-plugin/**'
+
+  # -------------------------
+  # BUILD + DEPLOY TENANT1
+  # -------------------------
+  tenant1:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.tenant1 == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Build Artifact
         run: |
-          zip -r wordpress-${{ github.run_number }}.zip .
+          zip -r tenant1-${{ github.run_number }}.zip \
+          wp-content/themes/tenant1-theme \
+          wp-content/plugins/tenant1-plugin
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: wordpress-build
-          path: wordpress-*.zip
+          name: tenant1-build
+          path: tenant1-*.zip
 
-      - name: Simulate Deployment
+      - name: Simulate Deploy
+        run: echo "Deploying Tenant1..."
+
+  # -------------------------
+  # BUILD + DEPLOY TENANT2
+  # -------------------------
+  tenant2:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.tenant2 == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Artifact
         run: |
-          echo "Deploying to WordPress platform..."
-          echo "Applying new build..."
-          echo "Restarting services..."
-          echo "Deployment successful!"
+          zip -r tenant2-${{ github.run_number }}.zip \
+          wp-content/themes/tenant2-theme \
+          wp-content/plugins/tenant2-plugin
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tenant2-build
+          path: tenant2-*.zip
+
+      - name: Simulate Deploy
+        run: echo "Deploying Tenant2..."
+
+  # -------------------------
+  # BUILD + DEPLOY TENANT3
+  # -------------------------
+  tenant3:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.tenant3 == 'true'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Artifact
+        run: |
+          zip -r tenant3-${{ github.run_number }}.zip \
+          wp-content/themes/tenant3-theme \
+          wp-content/plugins/tenant3-plugin
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tenant3-build
+          path: tenant3-*.zip
+
+      - name: Simulate Deploy
+        run: echo "Deploying Tenant3..."
