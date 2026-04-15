@@ -1,13 +1,16 @@
 global:
   scrape_interval: 15s
 
-rule_files:
-  - "alerts.yml"
-
 scrape_configs:
-  - job_name: "wordpress-tenants"
+
+  - job_name: "prometheus"
     static_configs:
-      - targets:
-          - tenant1:80
-          - tenant2:80
-          - tenant3:80
+      - targets: ["localhost:9090"]
+
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  - job_name: "cadvisor"
+    static_configs:
+      - targets: ["cadvisor:8080"]
