@@ -1,0 +1,33 @@
+groups:
+  - name: wordpress-alerts
+    rules:
+
+      # 🔴 1. Availability Alert
+      - alert: SiteDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Tenant is down"
+          description: "One of the WordPress tenants is not reachable"
+
+      # 🟡 2. Latency Alert
+      - alert: HighLatency
+        expr: scrape_duration_seconds > 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High latency detected"
+          description: "Response time is high"
+
+      # 🔵 3. Database Health (basic simulation)
+      - alert: DatabaseDown
+        expr: up{job="wordpress-tenants"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database might be down"
+          description: "Tenant service is unavailable"

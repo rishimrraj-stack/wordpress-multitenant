@@ -1,28 +1,29 @@
-# WordPress Multi-Tenant Platform
+# WordPress Multi-Tenant Platform (DevOps Assignment)
 
-## Setup
-docker-compose up -d
+## 🚀 Overview
+This project implements a multi-tenant WordPress platform using Docker Compose with CI/CD, monitoring, and centralized logging.
 
-## Tenants
-tenant1.local
-tenant2.local
-tenant3.local
+> This implementation follows a shared-code, isolated-data multi-tenant architecture aligned with SaaS best practices.
 
-## CI/CD
-- PR: validation
-- Merge: tenant-based artifact build
-- Deployment: simulated
+---
 
-## Monitoring
-Prometheus + Grafana
+## 🧱 Architecture
 
-## Architecture
-User → Nginx → WordPress → MySQL
-                  ↓
-           Prometheus + Grafana
+- Nginx → Reverse proxy
+- Multiple WordPress containers (one per tenant)
+- Separate MySQL databases per tenant
+- Shared wp-content with tenant-specific customization
+- Observability:
+  - Prometheus → Metrics
+  - Loki → Logs
+  - Grafana → Visualization
 
-## Onboarding Tenant
-1. Create DB
-2. Add container
-3. Add theme/plugin
-4. Update nginx
+---
+
+## 📁 Project Structure
+
+   - wp-content/
+   - tenants/
+   - nginx/
+   - monitoring/
+   - docker-compose.yml
